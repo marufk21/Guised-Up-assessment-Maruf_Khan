@@ -1,0 +1,7 @@
+{
+  "name": "@guised-up/ai",
+  "private": true,
+  "scripts": {
+    "dev": "node ../../scripts/dev-ai.mjs"
+  }
+}

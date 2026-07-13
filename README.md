@@ -1,159 +1,119 @@
-# Turborepo starter
+# Guised Up
 
-This Turborepo starter is maintained by the Turborepo core team.
+A full-stack AI-enhanced social feed monorepo — Laravel API, FastAPI embedding service, and Expo React Native mobile app, orchestrated with Turborepo.
 
-## Using this example
+## Architecture
 
-Run the following command:
-
-```sh
-npx create-turbo@latest
+```
+guised-up/
+├── apps/
+│   ├── api/        # Laravel 12 — REST API, feed ranking, search, auth (Sanctum)
+│   ├── ai/         # FastAPI + Chroma — embedding service & vector search (Python 3.14)
+│   └── mobile/     # Expo SDK 57 — React Native feed screen
+├── docs/           # Technical spec & video walkthrough docs
+├── sql/            # Reference SQL queries
+├── scripts/        # Dev scripts with unified port management
+└── turbo.json      # Turborepo task pipeline
 ```
 
-## What's inside?
+## Tech Stack
 
-This Turborepo includes the following packages/apps:
+| Layer     | Technology                                        |
+| --------- | ------------------------------------------------- |
+| API       | Laravel 12, PHP 8.2+, Sanctum, PostgreSQL         |
+| AI        | FastAPI, Chroma, sentence-transformers (MiniLM-L6) |
+| Mobile    | Expo SDK 57, React 19, React Native 0.86          |
+| Build     | Turborepo, pnpm                                   |
 
-### Apps and Packages
+## Getting Started
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Prerequisites
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- Node.js >= 18 with pnpm 9
+- PHP 8.2+ with Composer
+- Python 3.14 (for the embedding service)
+- PostgreSQL
 
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+### 1. Install dependencies
 
 ```sh
-cd my-turborepo
-turbo build
+pnpm install
 ```
 
-Without global `turbo`, use your package manager:
+Each app manages its own dependencies — run `composer install` in `apps/api` and set up the Python venv in `apps/ai` separately.
+
+### 2. Environment
+
+Copy `.env.example` files in each app and review the root `.env` for port configuration:
+
+| Variable      | App    | Default |
+| ------------- | ------ | ------- |
+| `API_PORT`    | api    | 8000    |
+| `AI_PORT`     | ai     | 8001    |
+| `MOBILE_PORT` | mobile | 8081    |
+
+### 3. Start developing
 
 ```sh
-cd my-turborepo
-npx turbo build
-npm dlx turbo build
-npm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
+# All apps in parallel
 turbo dev
+
+# Or individually
+pnpm dev:api      # Laravel API
+pnpm dev:ai       # FastAPI embedding service
+pnpm dev:mobile   # Expo mobile app
 ```
 
-Without global `turbo`, use your package manager:
+For app-specific setup details, see each app's README:
+
+- [apps/api](apps/api/) — Laravel API setup, migrations, demo tokens
+- [apps/ai](apps/ai/) — Python venv, embedding providers, Chroma persistence
+- [apps/mobile](apps/mobile/) — Expo prerequisites and backend prep
+
+## Apps in Detail
+
+### API (`apps/api`)
+
+Laravel 12 REST API with token-based authentication (Sanctum). Provides endpoints for the feed, posts, interactions, and search. Includes a feed ranker service, embeddings client to communicate with the AI service, and an authenticity scorer.
 
 ```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
+cd apps/api
+composer install
+php artisan migrate:fresh --seed
+php artisan app:index-posts          # Index posts into the vector store
+php artisan app:issue-demo-token     # Generate a demo Sanctum token
+php artisan serve
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### AI (`apps/ai`)
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Network-private FastAPI service that handles post embeddings and vector search via Chroma. Uses `sentence-transformers/all-MiniLM-L6-v2` by default, with a deterministic hash fallback for testing.
 
 ```sh
-turbo dev --filter=web
+cd apps/ai
+python3.14 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-Without global `turbo`:
+Endpoints: `/health`, `/documents/upsert`, `/search`, `/recommendations`.
+
+### Mobile (`apps/mobile`)
+
+Expo SDK 57 React Native app with a single authenticated Feed Screen. Connects to the Laravel API and displays ranked, AI-enhanced post content.
+
+## Build
 
 ```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
+turbo build          # Build all apps
+turbo build --filter=api   # Build a specific app
 ```
 
-### Remote Caching
+## Remote Caching
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Turborepo supports [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) on Vercel to share build cache across your team and CI.
 
 ```sh
-cd my-turborepo
 turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
 turbo link
 ```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)

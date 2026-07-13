@@ -1,0 +1,32 @@
+{
+  "name": "mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~57.0.4",
+    "expo-status-bar": "~57.0.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-native": "0.86.0",
+    "react-native-safe-area-context": "^5.8.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "jest-expo": "~57.0.1",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "dev": "node ../../scripts/dev-mobile.mjs",
+    "start": "node ../../scripts/dev-mobile.mjs",
+    "android": "node ../../scripts/dev-mobile.mjs --android",
+    "ios": "node ../../scripts/dev-mobile.mjs --ios",
+    "web": "node ../../scripts/dev-mobile.mjs --web",
+    "test": "jest --runInBand",
+    "typecheck": "tsc --noEmit"
+  },
+  "jest": {
+    "preset": "jest-expo"
+  },
+  "private": true
+}
