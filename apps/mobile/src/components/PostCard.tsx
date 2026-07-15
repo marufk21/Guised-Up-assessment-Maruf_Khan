@@ -1,10 +1,18 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
+import { avatarColor, color, duration, initials, radius, space, touch, type } from '../design';
 import type { Post } from '../types';
 import { timeAgo } from '../utils/timeAgo';
-
-const AVATAR_COLORS = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6'];
 
 interface PostCardProps {
   post: Post;
@@ -14,260 +22,204 @@ interface PostCardProps {
   onReact: (postId: number) => void;
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+const fontFix = Platform.select({ ios: {}, android: { includeFontPadding: false } });
 
-  if (parts.length === 0) {
-    return '?';
-  }
-
-  return parts
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('');
-}
-
-function avatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-export function PostCard({
-  post,
-  isReacting,
-  isReacted,
-  reactionError,
-  onReact,
-}: PostCardProps) {
+export function PostCard({ post, isReacting, isReacted, reactionError, onReact }: PostCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
+  const cardScale = useRef(new Animated.Value(1)).current;
+  const btnScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     setImageFailed(false);
   }, [post.image_url]);
 
-  const color = avatarColor(post.user.name);
+  const handlePressIn = useCallback(() => {
+    Animated.spring(cardScale, { toValue: 0.985, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  }, [cardScale]);
+
+  const handlePressOut = useCallback(() => {
+    Animated.spring(cardScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 4 }).start();
+  }, [cardScale]);
+
+  const handleBtnPressIn = useCallback(() => {
+    Animated.spring(btnScale, { toValue: 0.95, useNativeDriver: true, speed: 80, bounciness: 4 }).start();
+  }, [btnScale]);
+
+  const handleBtnPressOut = useCallback(() => {
+    Animated.spring(btnScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 4 }).start();
+  }, [btnScale]);
+
+  const pal = avatarColor(post.user.name);
+  const imageUrl = post.image_url;
+  const hasImage = imageUrl != null && imageUrl.length > 0;
+  const showImage = hasImage && !imageFailed;
 
   return (
-    <View style={styles.card}>
-      {/* Author row */}
-      <View style={styles.authorRow}>
-        <View style={[styles.avatar, { backgroundColor: color }]}>
-          <Text style={styles.avatarText}>{initials(post.user.name)}</Text>
-        </View>
-        <View style={styles.authorText}>
-          <Text style={styles.authorName}>{post.user.name}</Text>
-          <Text style={styles.timestamp}>{timeAgo(post.created_at)}</Text>
-        </View>
-        {/* Subtle ranking indicator */}
-        {post.ranking ? (
-          <View style={styles.scoreBadge}>
-            <Text style={styles.scoreText}>{Math.round(post.ranking.score * 100)}%</Text>
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} accessibilityRole="none">
+      <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }]}>
+        {/* ── Author Row ── */}
+        <View style={styles.authorRow}>
+          <View style={[styles.avatar, { backgroundColor: pal.bg }]}>
+            <Text style={[styles.avatarText, { color: pal.text }]}>
+              {initials(post.user.name)}
+            </Text>
           </View>
-        ) : null}
-      </View>
 
-      {/* Post text */}
-      <Text style={styles.postText}>{post.text}</Text>
+          <View style={styles.meta}>
+            <Text style={styles.name} numberOfLines={1}>{post.user.name}</Text>
+            <Text style={styles.time}>{timeAgo(post.created_at)}</Text>
+          </View>
 
-      {/* Image */}
-      {post.image_url && !imageFailed ? (
-        <Image
-          accessibilityLabel={`Image shared by ${post.user.name}`}
-          source={{ uri: post.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-          onError={() => setImageFailed(true)}
-        />
-      ) : null}
-
-      {post.image_url && imageFailed ? (
-        <View style={styles.imageError}>
-          <Text style={styles.imageErrorText}>📷 Image unavailable</Text>
+          {post.ranking != null && (
+            <View style={styles.score}>
+              <Text style={styles.scoreValue}>{Math.round(post.ranking.score * 100)}</Text>
+              <Text style={styles.scorePct}>%</Text>
+            </View>
+          )}
         </View>
-      ) : null}
 
-      {/* Action row */}
-      <View style={styles.actionRow}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={isReacted ? `Reacted to ${post.user.name}'s post` : `React to ${post.user.name}'s post`}
-          accessibilityState={{ disabled: isReacted || isReacting, busy: isReacting }}
-          disabled={isReacted || isReacting}
-          onPress={() => onReact(post.id)}
-          style={({ pressed }) => [
-            styles.reactionButton,
-            isReacted && styles.reactionButtonActive,
-            pressed && !isReacted && styles.reactionButtonPressed,
-          ]}
-        >
-          <Text style={styles.reactionIcon}>{isReacted ? '💛' : '🤍'}</Text>
-          {isReacting ? (
-            <ActivityIndicator color="#6366F1" size="small" />
-          ) : null}
-          <Text
-            style={[
-              styles.reactionText,
-              isReacted && styles.reactionTextActive,
-            ]}
+        {/* ── Body ── */}
+        <Text style={styles.body}>{post.text}</Text>
+
+        {/* ── Image ── */}
+        {showImage && (
+          <Image
+            source={{ uri: imageUrl! }}
+            style={styles.image}
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
+            accessibilityLabel={`Image shared by ${post.user.name}`}
+          />
+        )}
+
+        {hasImage && imageFailed && (
+          <View style={styles.imgFail}>
+            <Text style={styles.imgFailText}>Image unavailable</Text>
+          </View>
+        )}
+
+        {/* ── Actions ── */}
+        <View style={styles.actionRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isReacted ? 'Already reacted' : 'React to this post'}
+            accessibilityState={{ disabled: isReacted || isReacting }}
+            disabled={isReacted || isReacting}
+            onPress={() => onReact(post.id)}
+            onPressIn={handleBtnPressIn}
+            onPressOut={handleBtnPressOut}
           >
-            {isReacting ? 'Reacting…' : isReacted ? 'Reacted' : 'React'}
-          </Text>
-        </Pressable>
+            <Animated.View
+              style={[
+                styles.reactBtn,
+                isReacted && styles.reactBtnActive,
+                { transform: [{ scale: btnScale }] },
+              ]}
+            >
+              {isReacting ? (
+                <ActivityIndicator color={color.accent} size="small" />
+              ) : (
+                <Text style={[styles.reactIcon, isReacted && styles.reactIconActive]}>
+                  {isReacted ? '♥' : '♡'}
+                </Text>
+              )}
+              <Text style={[styles.reactLabel, isReacted && styles.reactLabelActive]}>
+                {isReacting ? 'Sending' : isReacted ? 'Reacted' : 'React'}
+              </Text>
+            </Animated.View>
+          </Pressable>
 
-        {/* Semantic similarity if available */}
-        {post.semantic_similarity !== undefined ? (
-          <Text style={styles.similarityLabel}>
-            {(post.semantic_similarity * 100).toFixed(0)}% match
-          </Text>
-        ) : null}
-      </View>
+          {post.semantic_similarity != null && (
+            <Text style={styles.similarity}>
+              {(post.semantic_similarity * 100).toFixed(0)}% match
+            </Text>
+          )}
+        </View>
 
-      {reactionError ? (
-        <Text style={styles.reactionError}>{reactionError}</Text>
-      ) : null}
-    </View>
+        {reactionError != null && (
+          <Text style={styles.reactionError}>{reactionError}</Text>
+        )}
+      </Animated.View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    marginBottom: 16,
-    padding: 20,
-    // iOS shadow
-    shadowColor: '#1E1B4B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    // Android shadow
-    elevation: 3,
+    marginBottom: 12,
+    paddingHorizontal: space[5],
+    paddingTop: space[5],
+    paddingBottom: space[4] + 2,
+    backgroundColor: color.card,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.hairline,
   },
-  authorRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
+
+  authorRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: {
-    alignItems: 'center',
-    borderRadius: 24,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+  avatarText: { fontSize: 16, fontWeight: '700' },
+  meta: { flex: 1, marginLeft: space[3] },
+  name: {
+    fontSize: type.label.size,
+    fontWeight: type.label.weight,
+    color: color.primary,
+    letterSpacing: type.label.tracking,
+    ...fontFix,
   },
-  authorText: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  authorName: {
-    color: '#1E1B4B',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  timestamp: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '500',
+  time: {
+    fontSize: type.meta.size,
+    fontWeight: type.meta.weight,
+    color: color.secondary,
     marginTop: 2,
+    ...fontFix,
   },
-  scoreBadge: {
-    backgroundColor: '#F0F0FF',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  score: {
+    flexDirection: 'row', alignItems: 'baseline',
+    backgroundColor: color.elevated, borderRadius: radius.sm,
+    paddingHorizontal: space[2], paddingVertical: space[1],
+    marginLeft: space[2],
   },
-  scoreText: {
-    color: '#6366F1',
-    fontSize: 12,
-    fontWeight: '700',
+  scoreValue: { fontSize: type.meta.size, fontWeight: '700', color: color.accent, ...fontFix },
+  scorePct: { fontSize: type.tiny.size, fontWeight: '700', color: color.accentMuted, marginLeft: 1, ...fontFix },
+
+  body: {
+    fontSize: type.body.size,
+    lineHeight: type.body.leading,
+    color: color.primary,
+    marginTop: space[4] - 2,
+    ...fontFix,
   },
-  postText: {
-    color: '#334155',
-    fontSize: 16,
-    lineHeight: 25,
-    marginTop: 16,
-    letterSpacing: 0.1,
-  },
+
   image: {
-    aspectRatio: 16 / 10,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 14,
-    marginTop: 16,
-    width: '100%',
+    width: '100%', aspectRatio: 16 / 10,
+    borderRadius: radius.md, marginTop: space[4],
+    backgroundColor: color.elevated,
   },
-  imageError: {
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderStyle: 'dashed',
+  imgFail: {
+    marginTop: space[4], minHeight: 64,
+    backgroundColor: color.elevated, borderRadius: radius.md,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: color.border, borderStyle: 'dashed',
+  },
+  imgFailText: { fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.tertiary, ...fontFix },
+
+  actionRow: { flexDirection: 'row', alignItems: 'center', marginTop: space[4], gap: space[3] },
+  reactBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: space[2],
+    paddingHorizontal: space[4], paddingVertical: space[2] + 1,
+    borderRadius: radius.md, borderWidth: 1, borderColor: color.hairline,
+    backgroundColor: color.elevated, minHeight: touch.min, minWidth: 88,
     justifyContent: 'center',
-    marginTop: 16,
-    minHeight: 80,
   },
-  imageErrorText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  actionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginTop: 16,
-    gap: 12,
-  },
-  reactionButton: {
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-    minHeight: 42,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  reactionButtonActive: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FED7AA',
-  },
-  reactionButtonPressed: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#C7D2FE',
-  },
-  reactionIcon: {
-    fontSize: 16,
-  },
-  reactionText: {
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  reactionTextActive: {
-    color: '#C2410C',
-  },
-  similarityLabel: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 'auto',
-  },
-  reactionError: {
-    color: '#DC2626',
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: 10,
-  },
+  reactBtnActive: { backgroundColor: color.reactedBg, borderColor: 'rgba(244, 114, 182, 0.25)' },
+  reactIcon: { fontSize: 16 },
+  reactIconActive: { color: color.reacted },
+  reactLabel: { fontSize: type.meta.size, fontWeight: '600', color: color.secondary, ...fontFix },
+  reactLabelActive: { color: color.reacted },
+  similarity: { fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.tertiary, marginLeft: 'auto', ...fontFix },
+  reactionError: { marginTop: space[2] + 2, fontSize: type.meta.size, fontWeight: type.meta.weight, color: color.error, ...fontFix },
 });
