@@ -72,8 +72,8 @@ class PhaseThreeFoundationTest extends TestCase
             ));
 
         $this->assertGreaterThan(
-            $depthByAuthor->get('arjun@example.com'),
-            $depthByAuthor->get('maya@example.com'),
+            $depthByAuthor->get('karan@example.com'),
+            $depthByAuthor->get('priya@example.com'),
         );
     }
 

@@ -45,16 +45,18 @@ The assessment tests system design, ranking choices, API quality, data modeling,
 ## 5. Monorepo Structure
 
 ```text
-guised-up-assessment-marufkhan/
+guised-up/
 ├── apps/
 │   ├── api/                    # Laravel API, migrations, seeders, and tests
+│   ├── ai/                     # FastAPI service, Chroma persistence, and tests
 │   └── mobile/                 # Expo React Native TypeScript feed screen
-├── services/
-│   └── embeddings/             # FastAPI service, Chroma persistence, and tests
 ├── docs/
-│   └── TSD.md                  # This document
+│   ├── TSD.md                  # This document
+│   └── VIDEO_GUIDE.md    # Recording preparation guide
 ├── sql/
 │   └── queries.sql             # Four PostgreSQL challenge queries
+├── scripts/                    # Dev scripts with unified port management
+├── turbo.json                  # Turborepo task pipeline
 └── README.md
 ```
 
@@ -183,7 +185,7 @@ Chroma provides persistent local vector storage, metadata filtering, and nearest
 
 ### Post storage and query embedding
 
-The service runs on the tested Python 3.14.4 environment and normally uses `sentence-transformers/all-MiniLM-L6-v2` on CPU for both posts and queries. The model loads once, lazily, and produces normalized vectors. FastAPI upserts one persistent Chroma cosine collection named `posts` under `services/embeddings/storage/chroma/`. Each document uses a deterministic caller-supplied ID such as `post-15`, the original post text, and optional string, integer, float, or boolean metadata. Repeating an ID replaces that Chroma document rather than duplicating it.
+The service runs on the tested Python 3.14.4 environment and normally uses `sentence-transformers/all-MiniLM-L6-v2` on CPU for both posts and queries. The model loads once, lazily, and produces normalized vectors. FastAPI upserts one persistent Chroma cosine collection named `posts` under `apps/ai/storage/chroma/`. Each document uses a deterministic caller-supplied ID such as `post-15`, the original post text, and optional string, integer, float, or boolean metadata. Repeating an ID replaces that Chroma document rather than duplicating it.
 
 `POST /documents/upsert` embeds and stores a document. `POST /search` embeds a non-empty natural-language query, supports limits from 1 to 50 and explicit ID exclusions, and returns document IDs, scalar metadata, and higher-is-better scores mapped from cosine similarity into `[0, 1]`. Empty collections return an empty result set. PostgreSQL content is not fabricated or returned by this service.
 
@@ -444,12 +446,12 @@ Critical tests include:
 
 ## 15. Local Development Strategy
 
-PostgreSQL must be running locally and the Laravel/Python environment variables must point to writable local storage. Chroma persists under `services/embeddings/storage/chroma/` (ignored by Git) and is opened by FastAPI rather than run separately.
+PostgreSQL must be running locally and the Laravel/Python environment variables must point to writable local storage. Chroma persists under `apps/ai/storage/chroma/` (ignored by Git) and is opened by FastAPI rather than run separately.
 
 The three application processes are:
 
 1. **Laravel API:** run portably through `php artisan serve` from `apps/api`. Migrations and seeders prepare PostgreSQL; `app:issue-demo-token` provides a local Sanctum token.
-2. **Embedding service:** use Python 3.14.4 to create a virtual environment under `services/embeddings`, install the pinned requirements, copy `.env.example` to `.env`, and run FastAPI with Uvicorn. It lazily loads `sentence-transformers/all-MiniLM-L6-v2` once and uses local persistent Chroma storage.
+2. **Embedding service:** use Python 3.14.4 to create a virtual environment under `apps/ai`, install the pinned requirements, copy `.env.example` to `.env`, and run FastAPI with Uvicorn. It lazily loads `sentence-transformers/all-MiniLM-L6-v2` once and uses local persistent Chroma storage.
 3. **Expo mobile app:** copy `.env.example` to `.env`, set a reachable `EXPO_PUBLIC_API_BASE_URL` and locally issued `EXPO_PUBLIC_API_TOKEN`, run `npm start` from `apps/mobile`, and open the app in an iOS/Android simulator or Expo Go. Use loopback for iOS, `10.0.2.2` for the Android emulator, or the development machine's LAN IP for a physical device. The `EXPO_PUBLIC_*` token is bundled and is acceptable only for this local assessment demonstration.
 
 The root [README](../README.md) contains the complete fresh-clone setup, service order, networking options, token workflow, and validation commands.

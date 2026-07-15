@@ -28,6 +28,24 @@ const feedResponse = {
   },
 };
 
+const searchResponse = {
+  data: [
+    {
+      id: 12,
+      user: { id: 2, name: 'Maya Demo' },
+      text: 'A quiet morning walk before work.',
+      image_url: null,
+      authenticity_score: 0.74,
+      embedding_status: 'ready',
+      created_at: '2026-07-13T08:00:00Z',
+      updated_at: '2026-07-13T08:00:00Z',
+      semantic_similarity: 0.91,
+    },
+  ],
+};
+
+const emptySearchResponse = { data: [] };
+
 function response(status, body) {
   return {
     ok: status >= 200 && status < 300,
@@ -106,5 +124,110 @@ describe('mobile API client', () => {
 
     global.fetch.mockResolvedValue(response(200, null));
     await expect(fetchFeed(1)).rejects.toThrow('unexpected response');
+  });
+
+  it('sends the search request with an encoded query string', async () => {
+    const abortController = new AbortController();
+    global.fetch.mockResolvedValue(response(200, searchResponse));
+    const { searchPosts } = require('./api');
+
+    await expect(
+      searchPosts('quiet morning', abortController.signal),
+    ).resolves.toEqual(searchResponse);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/api/search?q=quiet%20morning',
+      expect.objectContaining({
+        method: 'GET',
+        signal: abortController.signal,
+        headers: expect.objectContaining({
+          Authorization: 'Bearer local-test-token',
+        }),
+      }),
+    );
+  });
+
+  it('handles empty search results correctly', async () => {
+    const abortController = new AbortController();
+    global.fetch.mockResolvedValue(response(200, emptySearchResponse));
+    const { searchPosts } = require('./api');
+
+    await expect(
+      searchPosts('no-matching-results', abortController.signal),
+    ).resolves.toEqual(emptySearchResponse);
+  });
+
+  it('handles network failure as a safe ApiError', async () => {
+    global.fetch.mockRejectedValueOnce(new TypeError('Network request failed'));
+    const { fetchFeed } = require('./api');
+
+    let networkError;
+    try {
+      await fetchFeed(1);
+    } catch (error) {
+      networkError = error;
+    }
+
+    expect(networkError.kind).toBe('network');
+    expect(networkError.message).toContain('Unable to reach the API');
+    expect(networkError.status).toBeUndefined();
+  });
+
+  it('extracts field-level validation errors from 422 responses', async () => {
+    const validationBody = {
+      message: 'The text field is required.',
+      errors: { text: ['The text field is required.'] },
+    };
+    global.fetch.mockResolvedValue(response(422, validationBody));
+    const { fetchFeed } = require('./api');
+
+    let validationError;
+    try {
+      await fetchFeed(1);
+    } catch (error) {
+      validationError = error;
+    }
+
+    expect(validationError.kind).toBe('http');
+    expect(validationError.status).toBe(422);
+    expect(validationError.validationErrors).toEqual({
+      text: ['The text field is required.'],
+    });
+  });
+
+  it('handles 500 server error with a sanitized message', async () => {
+    global.fetch.mockResolvedValue(
+      response(500, { message: 'Server error.' }),
+    );
+    const { fetchFeed } = require('./api');
+
+    let serverError;
+    try {
+      await fetchFeed(1);
+    } catch (error) {
+      serverError = error;
+    }
+
+    expect(serverError.kind).toBe('http');
+    expect(serverError.status).toBe(500);
+    expect(serverError.message).toBe('Server error.');
+  });
+
+  it('throws a configuration error when EXPO_PUBLIC_API_BASE_URL is missing', async () => {
+    delete process.env.EXPO_PUBLIC_API_BASE_URL;
+    const { fetchFeed, getConfigurationError } = require('./api');
+
+    const configError = getConfigurationError();
+    expect(configError).toContain('EXPO_PUBLIC_API_BASE_URL');
+
+    let thrownError;
+    try {
+      await fetchFeed(1);
+    } catch (error) {
+      thrownError = error;
+    }
+
+    expect(thrownError.kind).toBe('configuration');
+    expect(thrownError.message).toContain('EXPO_PUBLIC_API_BASE_URL');
   });
 });

@@ -10,7 +10,7 @@ Python 3.14.4 is the tested interpreter for the pinned dependencies on macOS
 arm64. Create the local environment without changing the system Python:
 
 ```bash
-cd services/embeddings
+cd apps/ai
 python3.14 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 cp .env.example .env

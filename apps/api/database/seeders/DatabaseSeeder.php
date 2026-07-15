@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         $users = [];
 
         foreach ([
-            ['name' => 'Rohan Joshi', 'email' => 'rohan@example.com'],
+            ['name' => 'Maruf Khan', 'email' => 'maruf@example.com'],
             ['name' => 'Priya Kapoor', 'email' => 'priya@example.com'],
             ['name' => 'Karan Verma', 'email' => 'karan@example.com'],
         ] as $demoUser) {
@@ -45,36 +45,36 @@ class DatabaseSeeder extends Seeder
         }
 
         $postDefinitions = [
-            'rohan-monsoon' => [
-                'author' => 'rohan@example.com',
+            'maruf-monsoon' => [
+                'author' => 'maruf@example.com',
                 'text' => 'The first monsoon downpour caught me mid-cycle on Linking Road. Reached home soaked, laughing, and smelling of wet earth.',
                 'image_url' => null,
                 'authenticity_score' => 0.9300,
                 'created_at' => '2026-06-08 17:30:00',
             ],
-            'rohan-piano' => [
-                'author' => 'rohan@example.com',
+            'maruf-piano' => [
+                'author' => 'maruf@example.com',
                 'text' => 'Tried learning that one AR Rahman riff on the keyboard for three hours. My neighbours must hate me, but I almost have it down.',
                 'image_url' => null,
                 'authenticity_score' => 0.8500,
                 'created_at' => '2026-06-15 21:15:00',
             ],
-            'rohan-bookstore' => [
-                'author' => 'rohan@example.com',
+            'maruf-bookstore' => [
+                'author' => 'maruf@example.com',
                 'text' => 'Found a secondhand copy of a book I loved in college at a Fort bookstall. The margins still have someone else\'s pencil notes.',
                 'image_url' => 'https://placehold.co/1200x800/png?text=Old+Bookstore',
                 'authenticity_score' => 0.9100,
                 'created_at' => '2026-06-23 14:00:00',
             ],
-            'rohan-biryani' => [
-                'author' => 'rohan@example.com',
+            'maruf-biryani' => [
+                'author' => 'maruf@example.com',
                 'text' => 'My first attempt at Hyderabadi biryani. The layering was messy, the raita saved it, and my flatmates asked for seconds anyway.',
                 'image_url' => 'https://placehold.co/1200x800/png?text=Homemade+Biryani',
                 'authenticity_score' => 0.8800,
                 'created_at' => '2026-07-03 19:45:00',
             ],
-            'rohan-sprint' => [
-                'author' => 'rohan@example.com',
+            'maruf-sprint' => [
+                'author' => 'maruf@example.com',
                 'text' => 'Wrapped a two-month feature branch today. The merge was clean, the tests passed, and I treated myself to a long walk after.',
                 'image_url' => null,
                 'authenticity_score' => 0.7900,
@@ -179,24 +179,24 @@ class DatabaseSeeder extends Seeder
         }
 
         $interactionDefinitions = [
-            ['rohan@example.com', 'priya-terrace', Interaction::TYPE_VIEW, '2026-06-11 08:00:00'],
-            ['rohan@example.com', 'priya-terrace', Interaction::TYPE_REACTION, '2026-06-11 08:05:00'],
-            ['rohan@example.com', 'priya-jalebi', Interaction::TYPE_VIEW, '2026-06-18 10:30:00'],
-            ['rohan@example.com', 'priya-jalebi', Interaction::TYPE_REACTION, '2026-06-18 10:33:00'],
-            ['rohan@example.com', 'priya-jalebi', Interaction::TYPE_REPLY, '2026-06-18 10:45:00'],
-            ['rohan@example.com', 'priya-kolhapur', Interaction::TYPE_VIEW, '2026-07-06 09:00:00'],
-            ['rohan@example.com', 'priya-kolhapur', Interaction::TYPE_REACTION, '2026-07-06 09:02:00'],
-            ['rohan@example.com', 'karan-cycling', Interaction::TYPE_VIEW, '2026-06-15 07:45:00'],
-            ['rohan@example.com', 'karan-guitar', Interaction::TYPE_REACTION, '2026-07-09 18:20:00'],
-            ['priya@example.com', 'rohan-monsoon', Interaction::TYPE_VIEW, '2026-06-13 12:15:00'],
-            ['priya@example.com', 'rohan-bookstore', Interaction::TYPE_REACTION, '2026-06-25 16:10:00'],
-            ['priya@example.com', 'rohan-biryani', Interaction::TYPE_VIEW, '2026-07-04 20:30:00'],
-            ['priya@example.com', 'rohan-biryani', Interaction::TYPE_REPLY, '2026-07-04 20:40:00'],
+            ['maruf@example.com', 'priya-terrace', Interaction::TYPE_VIEW, '2026-06-11 08:00:00'],
+            ['maruf@example.com', 'priya-terrace', Interaction::TYPE_REACTION, '2026-06-11 08:05:00'],
+            ['maruf@example.com', 'priya-jalebi', Interaction::TYPE_VIEW, '2026-06-18 10:30:00'],
+            ['maruf@example.com', 'priya-jalebi', Interaction::TYPE_REACTION, '2026-06-18 10:33:00'],
+            ['maruf@example.com', 'priya-jalebi', Interaction::TYPE_REPLY, '2026-06-18 10:45:00'],
+            ['maruf@example.com', 'priya-kolhapur', Interaction::TYPE_VIEW, '2026-07-06 09:00:00'],
+            ['maruf@example.com', 'priya-kolhapur', Interaction::TYPE_REACTION, '2026-07-06 09:02:00'],
+            ['maruf@example.com', 'karan-cycling', Interaction::TYPE_VIEW, '2026-06-15 07:45:00'],
+            ['maruf@example.com', 'karan-guitar', Interaction::TYPE_REACTION, '2026-07-09 18:20:00'],
+            ['priya@example.com', 'maruf-monsoon', Interaction::TYPE_VIEW, '2026-06-13 12:15:00'],
+            ['priya@example.com', 'maruf-bookstore', Interaction::TYPE_REACTION, '2026-06-25 16:10:00'],
+            ['priya@example.com', 'maruf-biryani', Interaction::TYPE_VIEW, '2026-07-04 20:30:00'],
+            ['priya@example.com', 'maruf-biryani', Interaction::TYPE_REPLY, '2026-07-04 20:40:00'],
             ['priya@example.com', 'karan-dosa', Interaction::TYPE_VIEW, '2026-06-22 11:00:00'],
-            ['karan@example.com', 'rohan-piano', Interaction::TYPE_VIEW, '2026-06-19 19:10:00'],
+            ['karan@example.com', 'maruf-piano', Interaction::TYPE_VIEW, '2026-06-19 19:10:00'],
             ['karan@example.com', 'priya-design', Interaction::TYPE_REACTION, '2026-06-28 15:30:00'],
             ['karan@example.com', 'priya-night', Interaction::TYPE_VIEW, '2026-07-13 08:15:00'],
-            ['karan@example.com', 'rohan-sprint', Interaction::TYPE_REACTION, '2026-07-12 17:00:00'],
+            ['karan@example.com', 'maruf-sprint', Interaction::TYPE_REACTION, '2026-07-12 17:00:00'],
         ];
 
         foreach ($interactionDefinitions as [$email, $postKey, $type, $createdAt]) {

@@ -70,6 +70,57 @@ For app-specific setup details, see each app's README:
 - [apps/ai](apps/ai/) — Python venv, embedding providers, Chroma persistence
 - [apps/mobile](apps/mobile/) — Expo prerequisites and backend prep
 
+## Token Workflow
+
+The mobile app needs a valid Sanctum token to call the API. Generate one locally:
+
+```sh
+cd apps/api
+php artisan migrate:fresh --seed          # Reset database with demo data
+php artisan app:index-posts --force       # Index all posts into Chroma
+php artisan app:issue-demo-token maruf@example.com   # Generate a Sanctum token
+```
+
+Copy the one-time plaintext token into `apps/mobile/.env`:
+
+```env
+EXPO_PUBLIC_API_TOKEN=<the-token-shown-once>
+```
+
+The seeded demo user is `Maruf Khan` (maruf@example.com, password: `password`). Two other demo users — Priya Kapoor and Karan Verma — are also available.
+
+## Device Networking
+
+The API base URL in `apps/mobile/.env` depends on how you run the mobile app:
+
+| Platform | `EXPO_PUBLIC_API_BASE_URL` |
+|---|---|
+| iOS Simulator | `http://127.0.0.1:8000/api` |
+| Android Emulator | `http://10.0.2.2:8000/api` |
+| Physical device | `http://<your-lan-ip>:8000/api` (start Laravel with `php artisan serve --host=0.0.0.0 --port=8000`) |
+| Web (`--web`) | `http://127.0.0.1:8000/api` |
+
+## Validation Commands
+
+Run all project tests and type-checks:
+
+```sh
+# Laravel API tests
+cd apps/api && php artisan test
+
+# Python embedding service tests
+cd apps/ai && .venv/bin/python -m pytest -q
+
+# Mobile Jest tests (9 tests: api + timeAgo)
+cd apps/mobile && pnpm test
+
+# Mobile TypeScript type-check
+cd apps/mobile && pnpm typecheck
+
+# Full build
+pnpm build
+```
+
 ## Apps in Detail
 
 ### API (`apps/api`)

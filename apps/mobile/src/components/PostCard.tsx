@@ -4,6 +4,8 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'rea
 import type { Post } from '../types';
 import { timeAgo } from '../utils/timeAgo';
 
+const AVATAR_COLORS = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6'];
+
 interface PostCardProps {
   post: Post;
   isReacting: boolean;
@@ -25,6 +27,14 @@ function initials(name: string): string {
     .join('');
 }
 
+function avatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 export function PostCard({
   post,
   isReacting,
@@ -38,20 +48,31 @@ export function PostCard({
     setImageFailed(false);
   }, [post.image_url]);
 
+  const color = avatarColor(post.user.name);
+
   return (
     <View style={styles.card}>
+      {/* Author row */}
       <View style={styles.authorRow}>
-        <View style={styles.avatar} accessibilityElementsHidden>
+        <View style={[styles.avatar, { backgroundColor: color }]}>
           <Text style={styles.avatarText}>{initials(post.user.name)}</Text>
         </View>
         <View style={styles.authorText}>
           <Text style={styles.authorName}>{post.user.name}</Text>
           <Text style={styles.timestamp}>{timeAgo(post.created_at)}</Text>
         </View>
+        {/* Subtle ranking indicator */}
+        {post.ranking ? (
+          <View style={styles.scoreBadge}>
+            <Text style={styles.scoreText}>{Math.round(post.ranking.score * 100)}%</Text>
+          </View>
+        ) : null}
       </View>
 
+      {/* Post text */}
       <Text style={styles.postText}>{post.text}</Text>
 
+      {/* Image */}
       {post.image_url && !imageFailed ? (
         <Image
           accessibilityLabel={`Image shared by ${post.user.name}`}
@@ -64,10 +85,11 @@ export function PostCard({
 
       {post.image_url && imageFailed ? (
         <View style={styles.imageError}>
-          <Text style={styles.imageErrorText}>Image unavailable</Text>
+          <Text style={styles.imageErrorText}>📷 Image unavailable</Text>
         </View>
       ) : null}
 
+      {/* Action row */}
       <View style={styles.actionRow}>
         <Pressable
           accessibilityRole="button"
@@ -77,17 +99,35 @@ export function PostCard({
           onPress={() => onReact(post.id)}
           style={({ pressed }) => [
             styles.reactionButton,
-            isReacted && styles.reactionButtonComplete,
+            isReacted && styles.reactionButtonActive,
             pressed && !isReacted && styles.reactionButtonPressed,
           ]}
         >
-          {isReacting ? <ActivityIndicator color="#2E5BFF" size="small" /> : null}
-          <Text style={[styles.reactionText, isReacted && styles.reactionTextComplete]}>
+          <Text style={styles.reactionIcon}>{isReacted ? '💛' : '🤍'}</Text>
+          {isReacting ? (
+            <ActivityIndicator color="#6366F1" size="small" />
+          ) : null}
+          <Text
+            style={[
+              styles.reactionText,
+              isReacted && styles.reactionTextActive,
+            ]}
+          >
             {isReacting ? 'Reacting…' : isReacted ? 'Reacted' : 'React'}
           </Text>
         </Pressable>
-        {reactionError ? <Text style={styles.reactionError}>{reactionError}</Text> : null}
+
+        {/* Semantic similarity if available */}
+        {post.semantic_similarity !== undefined ? (
+          <Text style={styles.similarityLabel}>
+            {(post.semantic_similarity * 100).toFixed(0)}% match
+          </Text>
+        ) : null}
       </View>
+
+      {reactionError ? (
+        <Text style={styles.reactionError}>{reactionError}</Text>
+      ) : null}
     </View>
   );
 }
@@ -95,12 +135,16 @@ export function PostCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E1E4E8',
-    borderRadius: 18,
-    borderWidth: 1,
-    marginBottom: 14,
-    overflow: 'hidden',
-    padding: 18,
+    borderRadius: 20,
+    marginBottom: 16,
+    padding: 20,
+    // iOS shadow
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    // Android shadow
+    elevation: 3,
   },
   authorRow: {
     alignItems: 'center',
@@ -108,95 +152,122 @@ const styles = StyleSheet.create({
   },
   avatar: {
     alignItems: 'center',
-    backgroundColor: '#E9EEFF',
-    borderRadius: 22,
-    height: 44,
+    borderRadius: 24,
+    height: 48,
     justifyContent: 'center',
-    width: 44,
+    width: 48,
   },
   avatarText: {
-    color: '#2E5BFF',
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   authorText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
   },
   authorName: {
-    color: '#171A1F',
+    color: '#1E1B4B',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   timestamp: {
-    color: '#707780',
+    color: '#94A3B8',
     fontSize: 13,
+    fontWeight: '500',
     marginTop: 2,
   },
+  scoreBadge: {
+    backgroundColor: '#F0F0FF',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  scoreText: {
+    color: '#6366F1',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   postText: {
-    color: '#262A30',
+    color: '#334155',
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 25,
     marginTop: 16,
+    letterSpacing: 0.1,
   },
   image: {
     aspectRatio: 16 / 10,
-    backgroundColor: '#EEF0F3',
-    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
     marginTop: 16,
     width: '100%',
   },
   imageError: {
     alignItems: 'center',
-    backgroundColor: '#F2F3F5',
-    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
     justifyContent: 'center',
     marginTop: 16,
-    minHeight: 72,
+    minHeight: 80,
   },
   imageErrorText: {
-    color: '#707780',
-    fontSize: 13,
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
   },
   actionRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 14,
+    marginTop: 16,
+    gap: 12,
   },
   reactionButton: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    borderColor: '#C8D3FF',
-    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 96,
+    minHeight: 42,
     paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  reactionButtonComplete: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#EEF2FF',
+  reactionButtonActive: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA',
   },
   reactionButtonPressed: {
-    backgroundColor: '#F3F6FF',
+    backgroundColor: '#EEF2FF',
+    borderColor: '#C7D2FE',
+  },
+  reactionIcon: {
+    fontSize: 16,
   },
   reactionText: {
-    color: '#2E5BFF',
+    color: '#64748B',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  reactionTextComplete: {
-    color: '#30446F',
+  reactionTextActive: {
+    color: '#C2410C',
+  },
+  similarityLabel: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 'auto',
   },
   reactionError: {
-    color: '#B42318',
-    flexShrink: 1,
+    color: '#DC2626',
     fontSize: 13,
-    lineHeight: 18,
+    fontWeight: '500',
+    marginTop: 10,
   },
 });
