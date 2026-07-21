@@ -20,6 +20,10 @@ const child = spawn(
   {
     cwd: appDir,
     stdio: 'inherit',
+    env: {
+      ...process.env,
+      OTEL_SDK_DISABLED: 'true',
+    },
   },
 );
 

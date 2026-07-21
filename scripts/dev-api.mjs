@@ -3,11 +3,12 @@ import { spawn } from 'node:child_process';
 import { getPort } from './ports.mjs';
 
 const port = getPort('API_PORT', '8000');
+const host = process.env.API_HOST?.trim() || '0.0.0.0';
 const php = process.platform === 'win32' ? 'php.exe' : 'php';
 
 const child = spawn(
   php,
-  ['artisan', 'serve', '--host=127.0.0.1', `--port=${port}`],
+  ['artisan', 'serve', `--host=${host}`, `--port=${port}`],
   {
     cwd: new URL('../apps/api/', import.meta.url),
     stdio: 'inherit',

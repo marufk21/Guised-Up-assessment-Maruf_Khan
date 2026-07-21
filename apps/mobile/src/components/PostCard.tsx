@@ -102,9 +102,9 @@ export function PostCard({ post, isReacting, isReacted, reactionError, onReact }
         <View style={styles.actionRow}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={isReacted ? 'Already reacted' : 'React to this post'}
-            accessibilityState={{ disabled: isReacted || isReacting }}
-            disabled={isReacted || isReacting}
+            accessibilityLabel={isReacted ? 'Remove reaction' : 'React to this post'}
+            accessibilityState={{ disabled: isReacting }}
+            disabled={isReacting}
             onPress={() => onReact(post.id)}
             onPressIn={handleBtnPressIn}
             onPressOut={handleBtnPressOut}

@@ -139,14 +139,38 @@ class PhaseFiveApiTest extends TestCase
             ->assertJsonPath('data.1.id', $first->id);
     }
 
-    public function test_search_returns_503_when_fastapi_is_unavailable(): void
+    public function test_search_falls_back_to_keyword_results_when_fastapi_is_unavailable(): void
     {
         Sanctum::actingAs(User::factory()->create());
+        Post::factory()->create(['text' => 'A quiet journey through the rain.']);
+        Post::factory()->create(['text' => 'A loud evening in the city.']);
         Http::fake(['*/search' => Http::response([], 500)]);
 
         $this->getJson('/api/search?q=journey')
-            ->assertStatus(503)
-            ->assertExactJson(['message' => 'Semantic search is temporarily unavailable.']);
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.text', 'A quiet journey through the rain.')
+            ->assertJsonPath('data.0.semantic_similarity', 0)
+            ->assertJsonPath('meta.semantic_search_available', false);
+    }
+
+    public function test_search_falls_back_to_author_name_when_semantic_results_are_empty(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $priya = User::factory()->create(['name' => 'Priya Sharma']);
+        Post::factory()->create([
+            'user_id' => $priya->id,
+            'text' => 'A small note about finding balance today.',
+        ]);
+        Post::factory()->create(['text' => 'Another author with unrelated words.']);
+        Http::fake(['*/search' => Http::response(['results' => []])]);
+
+        $this->getJson('/api/search?q=priya')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.user.name', 'Priya Sharma')
+            ->assertJsonPath('data.0.semantic_similarity', 0)
+            ->assertJsonPath('meta.semantic_search_available', false);
     }
 
     public function test_relationship_depth_ranks_an_author_higher_and_platform_popularity_is_ignored(): void

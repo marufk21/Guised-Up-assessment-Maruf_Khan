@@ -65,6 +65,13 @@ export interface InteractionResponse {
   data: Interaction;
 }
 
+export interface UnreactResponse {
+  data: {
+    post_id: number;
+    reacted: false;
+  };
+}
+
 export interface LaravelApplicationError {
   message: string;
   code?: string;

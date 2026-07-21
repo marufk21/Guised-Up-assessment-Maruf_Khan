@@ -28,7 +28,7 @@ class PostResource extends JsonResource
             'updated_at' => $this->updated_at?->toISOString(),
             'ranking' => $this->when($this->resource->relationLoaded('ranking'), $this->ranking),
             'semantic_similarity' => $this->when(
-                $this->resource->relationLoaded('semantic_similarity'),
+                $this->resource->offsetExists('semantic_similarity'),
                 $this->semantic_similarity,
             ),
         ];

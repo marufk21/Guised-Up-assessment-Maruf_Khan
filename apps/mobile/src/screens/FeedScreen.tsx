@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { ApiError, createInteraction, fetchFeed, getConfigurationError, searchPosts } from '../api';
+import { ApiError, createInteraction, destroyReaction, fetchFeed, getConfigurationError, searchPosts } from '../api';
 import { HeaderBrand } from '../components/HeaderBrand';
 import { PostCard } from '../components/PostCard';
 import { PostCardSkeleton } from '../components/PostCardSkeleton';
@@ -185,17 +185,26 @@ export function FeedScreen() {
 
   // ── React ────────────────────────────────────────────────────
   const doReact = useCallback(async (id: number) => {
-    if (reactingRef.current.has(id) || reactedRef.current.has(id)) return;
+    if (reactingRef.current.has(id)) return;
     const ctrl = new AbortController();
     reactingRef.current.add(id); rxCtrls.current.set(id, ctrl);
     setReacting(new Set(reactingRef.current));
     setReactErrs((p) => { const n = new Map(p); n.delete(id); return n; });
 
+    const wasReacted = reactedRef.current.has(id);
+
     try {
-      await createInteraction(id, ctrl.signal);
-      if (!mounted.current || ctrl.signal.aborted) return;
-      reactedRef.current.add(id);
-      setReacted(new Set(reactedRef.current));
+      if (wasReacted) {
+        await destroyReaction(id, ctrl.signal);
+        if (!mounted.current || ctrl.signal.aborted) return;
+        reactedRef.current.delete(id);
+        setReacted(new Set(reactedRef.current));
+      } else {
+        await createInteraction(id, ctrl.signal);
+        if (!mounted.current || ctrl.signal.aborted) return;
+        reactedRef.current.add(id);
+        setReacted(new Set(reactedRef.current));
+      }
     } catch (e) {
       if (mounted.current && !ctrl.signal.aborted) setReactErrs((p) => new Map(p).set(id, messageFor(e)));
     } finally {

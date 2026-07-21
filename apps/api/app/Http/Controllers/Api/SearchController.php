@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Services\EmbeddingsClient;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -20,13 +21,12 @@ class SearchController extends Controller
         $validated = $request->validate([
             'q' => ['required', 'string', 'max:500', 'regex:/\S/u'],
         ]);
+        $query = trim($validated['q']);
 
         try {
-            $results = $embeddings->search(trim($validated['q']), 10);
+            $results = $embeddings->search($query, 10);
         } catch (Throwable) {
-            return response()->json([
-                'message' => 'Semantic search is temporarily unavailable.',
-            ], 503);
+            return $this->keywordSearch($query);
         }
 
         $orderedScores = [];
@@ -49,7 +49,7 @@ class SearchController extends Controller
                 $post = $postsById->get($postId);
 
                 if ($post !== null) {
-                    $post->setRelation('semantic_similarity', round($score, 4));
+                    $post->setAttribute('semantic_similarity', round($score, 4));
                 }
 
                 return $post;
@@ -58,8 +58,49 @@ class SearchController extends Controller
             ->take(10)
             ->values();
 
+        if ($posts->isEmpty()) {
+            return $this->keywordSearch($query);
+        }
+
         return response()->json([
             'data' => PostResource::collection($posts)->resolve(),
         ]);
+    }
+
+    /**
+     * Fall back to relational keyword search when semantic search is unavailable.
+     */
+    private function keywordSearch(string $query): JsonResponse
+    {
+        $posts = Post::query()
+            ->with('user:id,name')
+            ->where(function ($builder) use ($query): void {
+                $like = '%'.addcslashes($query, '%_\\').'%';
+
+                $builder->where('text', 'like', $like)
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', $like));
+            })
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        $this->attachKeywordScores($posts);
+
+        return response()->json([
+            'data' => PostResource::collection($posts)->resolve(),
+            'meta' => [
+                'semantic_search_available' => false,
+            ],
+        ]);
+    }
+
+    /**
+     * Keep the mobile search contract stable for fallback results.
+     *
+     * @param  EloquentCollection<int, Post>  $posts
+     */
+    private function attachKeywordScores(EloquentCollection $posts): void
+    {
+        $posts->each(fn (Post $post): Post => $post->setAttribute('semantic_similarity', 0.0));
     }
 }

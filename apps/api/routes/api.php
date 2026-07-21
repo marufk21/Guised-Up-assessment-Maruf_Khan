@@ -16,4 +16,5 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/feed', FeedController::class);
     Route::get('/search', SearchController::class);
     Route::post('/interactions', [InteractionController::class, 'store']);
+    Route::delete('/reactions', [InteractionController::class, 'destroyReaction']);
 });

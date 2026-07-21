@@ -1,3 +1,5 @@
+import { NativeModules, Platform } from 'react-native';
+
 import type {
   FeedPaginationMeta,
   FeedResponse,
@@ -10,6 +12,7 @@ import type {
   RankingDetails,
   SearchPost,
   SearchResponse,
+  UnreactResponse,
   UserSummary,
 } from './types';
 
@@ -29,7 +32,52 @@ export class ApiError extends Error {
 
 const rawApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ?? '';
 const apiToken = process.env.EXPO_PUBLIC_API_TOKEN?.trim() ?? '';
-const apiBaseUrl = rawApiBaseUrl.replace(/\/+$/, '');
+
+function getExpoHost(): string | null {
+  const scriptUrl = NativeModules.SourceCode?.scriptURL;
+
+  if (typeof scriptUrl !== 'string') {
+    return null;
+  }
+
+  try {
+    return new URL(scriptUrl).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+}
+
+function normalizeApiBaseUrl(value: string): string {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = value.replace(/\/+$/, '');
+
+  if (Platform.OS === 'web') {
+    return trimmed;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    const expoHost = getExpoHost();
+
+    if (expoHost && isLoopbackHost(url.hostname)) {
+      url.hostname = expoHost;
+      return url.toString().replace(/\/+$/, '');
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
+const apiBaseUrl = normalizeApiBaseUrl(rawApiBaseUrl);
 
 /** Return a user-facing message when required Expo environment values are absent. */
 export function getConfigurationError(): string | null {
@@ -258,5 +306,28 @@ export function createInteraction(postId: number, signal?: AbortSignal): Promise
       body: JSON.stringify(body),
     },
     isInteractionResponse,
+  );
+}
+
+function isUnreactResponse(value: unknown): value is UnreactResponse {
+  return (
+    isRecord(value) &&
+    isRecord(value.data) &&
+    isNumber(value.data.post_id) &&
+    value.data.reacted === false
+  );
+}
+
+/** Remove the authenticated user's latest reaction for a post. */
+export function destroyReaction(postId: number, signal?: AbortSignal): Promise<UnreactResponse> {
+  return requestJson(
+    '/reactions',
+    {
+      method: 'DELETE',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: postId }),
+    },
+    isUnreactResponse,
   );
 }
