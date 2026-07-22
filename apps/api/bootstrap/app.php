@@ -15,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands()
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Force JSON for all API routes — prevents redirect to undefined 'login' route
+        $middleware->api(append: [
+            \App\Http\Middleware\ForceJsonResponse::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

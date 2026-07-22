@@ -72,16 +72,3 @@ ORDER BY view_count DESC, post_id ASC;
 
 -- D4: Identify potential-spam users who created more than 20 posts in the last
 -- 24 hours. This is a review signal, not a confirmed-spam classification.
--- posts_created_at_index, posts_user_id_created_at_index, and users_pkey support it.
-SELECT
-    users.id AS user_id,
-    users.name,
-    users.email,
-    COUNT(posts.id) AS post_count
-FROM users
-INNER JOIN posts
-    ON posts.user_id = users.id
-WHERE posts.created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'
-GROUP BY users.id, users.name, users.email
-HAVING COUNT(posts.id) > 20
-ORDER BY post_count DESC, user_id ASC;
