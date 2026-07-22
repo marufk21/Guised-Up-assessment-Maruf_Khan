@@ -53,14 +53,15 @@ Press `i` for iOS Simulator or scan QR with Expo Go.
 - [ ] All terminals ke scrollback mein koi secret/token nahi
 - [ ] Notifications OFF (Focus Mode ON)
 - [ ] Close all browser tabs except repo + TSD
-- [ ] Editor mein yeh files open: `routes/api.php`, `FeedRanker.php`, `sql/queries.sql`
+- [ ] Editor mein yeh files open: `routes/api.php`, `FeedRanker.php`, `sql/queries.sql`, `CLAUDE.md`
+- [ ] Claude Code session ya AI tool usage evidence ready (git log, commit history)
 - [ ] Screen recording software ready (Win+Alt+R or OBS)
 
 ---
 
 ## 🎙️ The Script — Scene by Scene
 
-### SCENE 1: INTRO (30 seconds)
+### SCENE 1: INTRO (25 seconds)
 
 **Screen pe:** TSD.md ka architecture diagram
 
@@ -68,9 +69,9 @@ Press `i` for iOS Simulator or scan QR with Expo Go.
 
 > "Hi, I'm Maruf Khan. This is my submission for the Guised Up Full-Stack Developer assessment — a Real Connections Feed.
 >
-> Three apps, one monorepo: Laravel REST API with Sanctum auth, PostgreSQL for relational data, FastAPI with Chroma for vector embeddings and semantic search, and an Expo React Native mobile feed screen.
+> The evaluation has five dimensions: Technical Solution Document, Backend Quality, React Native Screen, SQL Queries, and AI Tool Usage. I'll cover all five.
 >
-> Let me walk you through it."
+> Three apps, one monorepo: Laravel REST API with Sanctum, PostgreSQL, FastAPI with Chroma for vector embeddings, and an Expo React Native mobile feed. Let me walk you through it."
 
 ---
 
@@ -214,38 +215,56 @@ score = 0.25 × Authenticity + 0.30 × Relationship + 0.30 × Semantic + 0.15 ×
 
 ---
 
-### SCENE 6: SQL + TESTS (45 seconds)
+### SCENE 6: AI TOOL USAGE (40 seconds)
+
+**Screen pe:** Claude Code terminal / IDE with AI assistant visible, git commit history
+
+**Bolo:**
+
+> "The fifth evaluation dimension is AI Tool Usage — and I leaned into this heavily. Claude Code accelerated every phase: scaffolding the Turborepo monorepo, generating the deterministic `post-{id}` document ID convention for bridging PostgreSQL and Chroma, and iterating on the four-signal feed ranking formula.
+>
+> Over 25 atomic commits in a single focused session — AI handled boilerplate, I made the architectural decisions. Every AI suggestion was reviewed, understood, and owned.
+>
+> The result: going from an empty repo to working three-service architecture with tests, in hours instead of days."
+
+**Screen pe:** Show a quick scroll through `CLAUDE.md` — the AI instructions file checked into the repo
+
+> "The repo includes CLAUDE.md — the instruction set any AI agent reads to understand the codebase. This means the AI-assisted workflow is reproducible. Any developer cloning this repo gets the same acceleration."
+
+---
+
+### SCENE 7: SQL + TESTS (50 seconds)
 
 **Screen pe:** `sql/queries.sql` open
 
 **Bolo:**
 
-> "The SQL challenge has four queries against the actual application schema:"
+> "The SQL dimension — 15% of the evaluation — has four queries against the actual application schema. These aren't toy examples; they run against the real tables."
 
 **Scroll through each:**
 
-> "D1: Top 10 active users in 7 days, separated by interaction type. Uses `COUNT(*) FILTER`.
+> "D1: Top 10 active users in 7 days, with interaction type breakdowns using `COUNT(*) FILTER`.
 >
-> D2: Posts from authors I interact with most, ordered by frequency — parameterized with a single user ID CTE.
+> D2: Posts from authors I interact with most — parameterized via a single user ID CTE, making it reusable.
 >
-> D3: Posts with 100+ views and zero reactions — potential engagement gaps.
+> D3: Posts with 100+ views and zero reactions — surfaces potential engagement gaps the feed ranker might miss.
 >
-> D4: Spam detection — users with more than 20 posts in 24 hours."
+> D4: Spam detection — users with more than 20 posts in 24 hours, useful as a moderation signal."
 
 **Screen pe:** Switch to terminal with test output
 
 ```powershell
 cd apps/api && php artisan test --filter=Phase
-cd ../mobile && npm test
+cd ../mobile && pnpm test
 ```
 
 **Bolo:**
 
-> "22 Laravel tests pass — covering authenticated endpoints, ranking correctness, post creation with embedding failure, feed degradation, and deterministic seeder validation. Mobile has 15 passing Jest tests covering the API client and time utilities. Python pytest suite covers the embedding service with deterministic hash-mode tests — no network, no model download."
+> "22 Laravel tests cover authenticated endpoints, ranking correctness, post creation with embedding failure, feed degradation, and deterministic seeder validation. Mobile has 15 Jest tests for the API client and time utilities. Python pytest uses hash-mode — deterministic, no network, verifying embedding contracts reliably."
 
 ---
 
-### SCENE 7: TRADE-OFFS (45 seconds)
+### SCENE 8: TRADE-OFFS (40 seconds)
 
 **Screen pe:** Back to TSD section 16
 
@@ -263,15 +282,15 @@ cd ../mobile && npm test
 
 ---
 
-### SCENE 8: CLOSING (20 seconds)
+### SCENE 9: CLOSING (20 seconds)
 
 **Screen pe:** README setup section
 
 **Bolo:**
 
-> "The repository has a complete README with fresh-clone setup, device networking options, token workflow, and all validation commands. Three apps start with a single `pnpm dev` command.
+> "So to recap against the five evaluation dimensions: The TSD documents every architectural decision. The backend has clean Laravel architecture with working vector search and 22 tests. The React Native screen handles loading, empty, error, and edge cases. Four SQL queries run against real schema. And AI tool usage is woven through the entire workflow — reproducible via CLAUDE.md.
 >
-> Thank you for reviewing my submission!"
+> Three apps, one `pnpm dev` command. Thank you for reviewing my submission!"
 
 ---
 
